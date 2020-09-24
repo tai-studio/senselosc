@@ -20,6 +20,8 @@ add_executable(senselosc senselosc.cpp)
 target_compile_features(senselosc PRIVATE cxx_std_17)
 target_include_directories(senselosc PUBLIC "${SENSEL_INCLUDE_DIRS}")
 target_link_libraries(senselosc PRIVATE 
+	Boost::program_options
+	fmt::fmt
 	${SENSEL_LIBRARIES}
 	oscpack
 	sensosc

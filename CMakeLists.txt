@@ -43,19 +43,21 @@ if(${CMAKE_VERSION} VERSION_LESS 3.14)
   include(cmake/add_FetchContent_MakeAvailable.cmake)
 endif()
 
-# Accumulator library
 # This is header only, so could be replaced with git submodules or FetchContent
+# for cmd-line options
 # find_package(Boost REQUIRED)
-# Adds Boost::boost
+find_package(Boost 1.73 COMPONENTS program_options REQUIRED)
+
+# sensel morph hardware API
 find_package(Sensel REQUIRED)
 
-# # Formatting library
-# FetchContent_Declare(
-#   fmtlib
-#   GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-#   GIT_TAG 5.3.0)
-# FetchContent_MakeAvailable(fmtlib)
-# # Adds fmt::fmt
+# Formatting library
+FetchContent_Declare(
+  fmtlib
+  GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+  GIT_TAG 5.3.0)
+FetchContent_MakeAvailable(fmtlib)
+# Adds fmt::fmt
 
 
 # external library code is here

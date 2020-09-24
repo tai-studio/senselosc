@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <iostream>
+#include <iterator>
 
 #ifdef WIN32
     #include <windows.h>
@@ -8,13 +10,22 @@
     #include <pthread.h>
 #endif
 
+// cmd-line options
+#include <boost/program_options.hpp>
+namespace po = boost::program_options;
+
+#include <fmt/format.h>
+
+
+
+// using namespace std;
+
 // OSC
 
 #include "osc/OscOutboundPacketStream.h"
 #include "ip/UdpSocket.h"
 
 #define OSC_OUT_ADDRESS "127.0.0.1"
-#define OSC_OUT_PORT 7000
 #define OSC_OUTPUT_BUFFER_SIZE 8192
 
 // Sensel Morph
@@ -37,12 +48,65 @@ void * waitForEnter(void * arg)
 
 int main(int argc, char* argv[])
 {
-    (void) argc; // suppress unused parameter warnings
-    (void) argv; // suppress unused parameter warnings
+    int osc_outPort = 7000;
+    bool notBundled = false;
+
+    try {
+        po::options_description desc("options");
+        desc.add_options()
+            ("help,h", "this help message")
+            ("nobundle,x", "send messages unbundled")
+            ("port,p", po::value<int>(), 
+                fmt::format("set output port number (default: {})", osc_outPort).c_str()
+            )
+        ;
+
+
+        po::variables_map vm;
+        po::store(po::parse_command_line(argc, argv, desc), vm);
+        po::notify(vm);    
+
+        if (vm.count("help")) {
+            std::cout << "Usage: senselosc [options]\n";
+            std::cout << desc << "\n";
+            std::cout << R"(OSC messages sent:
+    /morph      <index> <id> <state> <x> <y> <force> <area> <orient> <major_axis> <minor_axis>
+    /morphDelta <index> <id> <d_x> <d_y> <d_force> <d_area>
+    /morphBB    <index> <id> <min_x> <min_y> <max_x> <max_y>
+    /morphPeak  <index> <id> <peak_x> <peak_y> <peak_force>)" << "\n";
+            return 0;
+        }
+
+        if (vm.count("nobundle")) {
+            notBundled = true;
+        }
+
+        if (vm.count("port")) {
+            osc_outPort = vm["port"].as<int>();
+
+            std::cout << "port set to " 
+                 << osc_outPort << ".\n";
+
+        } else {
+            std::cout << "using default port " << osc_outPort << ".\n";
+        }
+    }
+    catch(std::exception& e) {
+        std::cerr << "error: " << e.what() << "\n";
+        return 1;
+    }
+    catch(...) {
+        std::cerr << "Exception of unknown type!\n";
+    }
+
+
+
+
+
 
 
     // OSC
-    UdpTransmitSocket transmitSocket( IpEndpointName( OSC_OUT_ADDRESS, OSC_OUT_PORT ) );
+    UdpTransmitSocket transmitSocket( IpEndpointName( OSC_OUT_ADDRESS, osc_outPort ) );
     char buffer[OSC_OUTPUT_BUFFER_SIZE];
     osc::OutboundPacketStream packet( buffer, OSC_OUTPUT_BUFFER_SIZE );
     
@@ -66,7 +130,9 @@ int main(int argc, char* argv[])
         for (int i = 0; i < numFrames; ++i) {
             SenselFrameData *frame = morph.getFrame();
             if (frame->n_contacts > 0) {
-                packet << osc::BeginBundleImmediate;
+                if (!notBundled) {
+                    packet << osc::BeginBundleImmediate;
+                }
                 for (int c = 0; c < frame->n_contacts; c++) {
                     SenselContact contact = frame->contacts[c];
                     unsigned int state = contact.state;
@@ -84,7 +150,11 @@ int main(int argc, char* argv[])
                         << (float) contact.major_axis
                         << (float) contact.minor_axis
                         << osc::EndMessage;
-
+                    if (notBundled) {
+                        transmitSocket.Send( packet.Data(), packet.Size() );
+                        packet.Clear();
+                    }
+                    
                     packet << osc::BeginMessage( "/morphDelta" )
                         << (int) morph.index
                         << (int) contact.id
@@ -93,6 +163,10 @@ int main(int argc, char* argv[])
                         << (float) contact.delta_force
                         << (int) contact.delta_area
                         << osc::EndMessage;
+                    if (notBundled) {
+                        transmitSocket.Send( packet.Data(), packet.Size() );
+                        packet.Clear();
+                    }
 
                     packet << osc::BeginMessage( "/morphBB" )
                         << (int) morph.index
@@ -102,6 +176,10 @@ int main(int argc, char* argv[])
                         << (float) contact.max_x
                         << (float) contact.max_y
                         << osc::EndMessage;
+                    if (notBundled) {
+                        transmitSocket.Send( packet.Data(), packet.Size() );
+                        packet.Clear();
+                    }
 
                     packet << osc::BeginMessage( "/morphPeak" )
                         << (int) morph.index
@@ -110,11 +188,17 @@ int main(int argc, char* argv[])
                         << (float) contact.peak_y
                         << (float) contact.peak_force
                         << osc::EndMessage;
+                    if (notBundled) {
+                        transmitSocket.Send( packet.Data(), packet.Size() );
+                        packet.Clear();
+                    }
 
                 } // rof
-                packet << osc::EndBundle;
-                transmitSocket.Send( packet.Data(), packet.Size() );
-                packet.Clear();
+                if (!notBundled) {
+                    packet << osc::EndBundle;
+                    transmitSocket.Send( packet.Data(), packet.Size() );
+                    packet.Clear();
+                }
             } // end if
         } // rof
     } // end while
