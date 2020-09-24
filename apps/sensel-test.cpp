@@ -163,7 +163,7 @@ int main(int argc, char **argv)
 				fprintf(stdout, "Num Contacts: %d\n", frame->n_contacts);
 				for (int c = 0; c < frame->n_contacts; c++)
 				{
-					SenselContact contact = contacts[c];
+					SenselContact contact = frame->contacts[c];
 					unsigned int state = contact.state;
 
 
@@ -200,10 +200,10 @@ int main(int argc, char **argv)
 
 
 					// TODO: compile osc message
-					fprintf(stdout, "Contact ID: %d %f %f %f %f %f State: %s\n", 
+					fprintf(stdout, "Contact ID: %d %f %f %f %f State: %s\n", 
 						contact.id, 
 						contact.x_pos, contact.y_pos,
-						contact.orientation % 360, // strange +- values occur, see http://guide.sensel.com/api/#ellipse
+						contact.orientation,// % 360, // strange +- values occur, see http://guide.sensel.com/api/#ellipse
 						contact.area, 
 						CONTACT_STATE_STRING[state]
 					);
