@@ -5,6 +5,7 @@ An [OSC](http://opensoundcontrol.org/) interface for the [sensel morph](https://
 Exposes contact information for up to 16 regions of the sensel morph using the [Sensel API](http://guide.sensel.com/api/).
 
 
+[![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/S6S72858T)
 
 ## Requirements
 
