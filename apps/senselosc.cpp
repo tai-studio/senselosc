@@ -16,7 +16,13 @@ namespace po = boost::program_options;
 
 #include <fmt/format.h>
 
-
+// TODO
+// add time delta to messages
+// #include <chrono>
+// std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+// std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+// std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+// std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count() << "[ns]" << std::endl;
 
 // using namespace std;
 
@@ -50,12 +56,16 @@ int main(int argc, char* argv[])
 {
     int osc_outPort = 7000;
     bool notBundled = false;
+    int scanDetail = 2;
 
     try {
         po::options_description desc("options");
         desc.add_options()
             ("help,h", "this help message")
             ("nobundle,x", "send messages unbundled")
+            ("scandetail,d", po::value<int>(), 
+                "set scanning detail (0: low, 1:med, 2:high), defaults to high"
+            )
             ("port,p", po::value<int>(), 
                 fmt::format("set output port number (default: {})", osc_outPort).c_str()
             )
@@ -83,12 +93,17 @@ int main(int argc, char* argv[])
 
         if (vm.count("port")) {
             osc_outPort = vm["port"].as<int>();
-
             std::cout << "port set to " 
                  << osc_outPort << ".\n";
-
         } else {
             std::cout << "using default port " << osc_outPort << ".\n";
+        }
+        if (vm.count("scandetail")) {
+            scanDetail = vm["scandetail"].as<int>();
+            std::cout << "scanning detail set to " 
+                 << scanDetail << ".\n";
+        } else {
+            std::cout << "using default scanning detail " << scanDetail << ".\n";
         }
     }
     catch(std::exception& e) {
@@ -114,6 +129,7 @@ int main(int argc, char* argv[])
     // Sensel Morph
 
     sensosc::Morph morph;
+    morph.setScanDetail(scanDetail);
 
     fprintf(stdout, "Press Enter to exit\n");
     #ifdef WIN32
@@ -154,7 +170,7 @@ int main(int argc, char* argv[])
                         transmitSocket.Send( packet.Data(), packet.Size() );
                         packet.Clear();
                     }
-                    
+
                     packet << osc::BeginMessage( "/morphDelta" )
                         << (int) morph.index
                         << (int) contact.id

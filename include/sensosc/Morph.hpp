@@ -30,6 +30,7 @@ namespace sensosc
 		// idx wraps around
 		// brightness between [0..1]
 		void setLED(int idx, float brightness);
+		void setScanDetail(int level);
 
 		// how many unprocessed frames?
 		int getNumFrames();

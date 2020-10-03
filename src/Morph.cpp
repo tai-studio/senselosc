@@ -92,25 +92,17 @@ namespace sensosc
     	// Disable dynamic baselining (default on), i.e. removes unintended forces 
 	    // over time in order to prevent spurious contacts
 		// senselSetDynamicBaselineEnabled(handle, 1);
-
-	    // Update the brightness of one LED
-		// senselSetLEDBrightness(handle, )
-		// senselGetLEDBrightness(handle, )
-    	// senselGetNumAvailableLEDs(handle)
-
+ 
 	    // set maximum scanning framerate 
 		// max 2000Hz
 	    // For higher frame rates, however,
 	    // actual frame rate dependents on Scan Detail:
 	    // Scan Detail == medium >> max. 250fps
 	    // Scan Detail == low >> max. 1000fps
-		senselSetMaxFrameRate(handle, 500); // > SC control rate
+		senselSetMaxFrameRate(handle, 2000); // max rate
 
 		// set scan detail
-		// High Detail (0), Medium Detail (1), Low Detail (2)
-		senselSetScanDetail(handle, SCAN_DETAIL_HIGH); // max detail
-		// senselSetScanDetail(handle, 1); // medium detail
-		// senselSetScanDetail(handle, 2); // min detail
+		setScanDetail(2);
 
 		// set if frames are sent synchronously (default) or asynchronously
 		// SCAN_MODE_DISABLE,
@@ -119,9 +111,31 @@ namespace sensosc
 		// senselSetScanMode(handle, SCAN_MODE_ASYNC);
 	}; // end init()
 
-		// ~Morph(){
-		// 	handle = NULL;
-		// };
+
+	void Morph::setScanDetail(int level) {
+		switch(level) {
+			case 0  :
+				senselSetScanDetail(handle, SCAN_DETAIL_LOW); // min detail
+		    	break; //optional
+			case 1  :
+				senselSetScanDetail(handle, SCAN_DETAIL_MEDIUM); // min detail
+		    	break; //optional
+			case 2  :
+				senselSetScanDetail(handle, SCAN_DETAIL_HIGH); // min detail
+		    	break; //optional
+			default : //Optional
+				senselSetScanDetail(handle, SCAN_DETAIL_HIGH); // min detail
+		}
+
+				// senselSetScanDetail(handle, SCAN_DETAIL_HIGH); // max detail
+		senselSetScanDetail(handle, SCAN_DETAIL_MEDIUM); // medium detail
+		// senselSetScanDetail(handle, SCAN_DETAIL_LOW); // min detail
+
+	}
+
+	// ~Morph(){
+	// 	handle = NULL;
+	// };
 	int Morph::getNumFrames() {
 		//Read all available data from the Sensel device
 		senselReadSensor(handle);
