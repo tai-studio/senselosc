@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdexcept>
 
 #include "sensel.h"
 #include "sensel_device.h"

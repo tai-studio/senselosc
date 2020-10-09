@@ -138,13 +138,17 @@ namespace sensosc
 	// };
 	int Morph::getNumFrames() {
 		//Read all available data from the Sensel device
-		senselReadSensor(handle);
+		if (senselReadSensor(handle) != SENSEL_OK) {
+			throw std::runtime_error("sensor read error");
+		}
 		//Get number of frames available in the data read from the sensor
 		senselGetNumAvailableFrames(handle, &num_frames);
 		return num_frames;
 	}
 	SenselFrameData* Morph::getFrame(){
-		senselGetFrame(handle, frame);
+		if (senselGetFrame(handle, frame) != SENSEL_OK) {
+			throw std::runtime_error("frame read error");
+		}
 		return frame;
 	} 
 	void Morph::setLED(int idx, float brightness){
