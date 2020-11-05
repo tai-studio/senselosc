@@ -33,6 +33,12 @@ namespace sensosc
 		open();
 		init();
 	}
+	Morph::~Morph(){
+	    delete []this->distances_to_center_of_mass;  
+	    this->distances_to_center_of_mass = NULL;
+	// 	handle = NULL;
+	};
+
 	int Morph::open(){
 		SenselDeviceList list;
 		//Get a list of avaialble Sensel devices
@@ -109,6 +115,9 @@ namespace sensosc
     	// SCAN_MODE_SYNC,
 	    // SCAN_MODE_ASYNC,
 		// senselSetScanMode(handle, SCAN_MODE_ASYNC);
+
+
+		this->distances_to_center_of_mass = new float[MAX_CONTACTS];  
 	}; // end init()
 
 
@@ -133,9 +142,6 @@ namespace sensosc
 
 	}
 
-	// ~Morph(){
-	// 	handle = NULL;
-	// };
 	int Morph::getNumFrames() {
 		//Read all available data from the Sensel device
 		if (senselReadSensor(handle) != SENSEL_OK) {
@@ -149,8 +155,46 @@ namespace sensosc
 		if (senselGetFrame(handle, frame) != SENSEL_OK) {
 			throw std::runtime_error("frame read error");
 		}
+		this->calcState();
 		return frame;
 	} 
+	void Morph::calcState(){
+		//init
+		this->x_center_of_mass = .0;
+		this->y_center_of_mass = .0;
+		this->average_force    = .0;
+		this->average_area     = .0;
+		this->average_distance = .0;
+		this->distances_to_center_of_mass[frame->n_contacts] = {};
+
+		// compute averages
+		for (int c = 0; c < frame->n_contacts; c++) {
+			SenselContact contact = frame->contacts[c];
+
+			this->x_center_of_mass += contact.x_pos;
+			this->y_center_of_mass += contact.y_pos;
+			this->average_force    += contact.total_force;
+			this->average_area     += contact.area;
+		}
+		this->x_center_of_mass = this->x_center_of_mass / frame->n_contacts;
+		this->y_center_of_mass = this->y_center_of_mass / frame->n_contacts;
+		this->average_force    = this->average_force    / frame->n_contacts;
+		this->average_area     = this->average_area     / frame->n_contacts;
+
+
+		// compute distances to CoM
+		for (int c = 0; c < frame->n_contacts; c++) {
+			SenselContact contact = frame->contacts[c];
+			float avg = std::hypot(
+				contact.x_pos - this->x_center_of_mass, 
+				contact.y_pos - this->y_center_of_mass 
+			);
+
+			this->distances_to_center_of_mass[c] = avg;
+			this->average_distance += avg;			
+		}
+		this->average_distance = this->average_distance / frame->n_contacts;
+	}
 	void Morph::setLED(int idx, float brightness){
 		senselSetLEDBrightness(handle, idx % numLEDs, (int) (brightness * maxLEDBrightness));
 	}

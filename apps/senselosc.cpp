@@ -80,10 +80,16 @@ int main(int argc, char* argv[])
             std::cout << "Usage: senselosc [options]\n";
             std::cout << desc << "\n";
             std::cout << R"(OSC messages sent:
-    /morph      <index> <id> <state> <x> <y> <force> <area> <orient> <major_axis> <minor_axis>
-    /morphDelta <index> <id> <d_x> <d_y> <d_force> <d_area>
-    /morphBB    <index> <id> <min_x> <min_y> <max_x> <max_y>
-    /morphPeak  <index> <id> <peak_x> <peak_y> <peak_force>)" << "\n";
+    /contactAvg   <index> <num_contacts> <x> <y> <force> <area> <distance>
+    /contact      <index> <id> <state> <x> <y> <force> <area> <distance> <orient> <major_axis> <minor_axis>
+    /contactDelta <index> <id> <d_x> <d_y> <d_force> <d_area>
+    /contactBB    <index> <id> <min_x> <min_y> <max_x> <max_y>
+    /contactPeak  <index> <id> <peak_x> <peak_y> <peak_force>)" 
+            << "\n" 
+            << "see README.md for details."
+            << "\n\n" 
+            << "http://tai-studio.org"
+            << "\n";
             return 0;
         }
 
@@ -139,6 +145,7 @@ int main(int argc, char* argv[])
         pthread_create(&thread, NULL, &waitForEnter, NULL);
     #endif
 
+    bool lastFrameValid = false;
     while (!enter_pressed) {
         int numFrames = morph.getNumFrames();
         // fprintf(stdout, "%d\n", numFrames);
@@ -146,15 +153,31 @@ int main(int argc, char* argv[])
         for (int i = 0; i < numFrames; ++i) {
             SenselFrameData *frame = morph.getFrame();
             if (frame->n_contacts > 0) {
+                lastFrameValid = true;
                 if (!notBundled) {
                     packet << osc::BeginBundleImmediate;
                 }
+
+                packet << osc::BeginMessage( "/contactAvg" )
+                    << (int) morph.index
+                    << (int) frame->n_contacts
+                    << (float) morph.x_center_of_mass
+                    << (float) morph.y_center_of_mass
+                    << (float) morph.average_force
+                    << (float) morph.average_area
+                    << (float) morph.average_distance
+                    << osc::EndMessage;
+                if (notBundled) {
+                    transmitSocket.Send( packet.Data(), packet.Size() );
+                    packet.Clear();
+                }
+
                 for (int c = 0; c < frame->n_contacts; c++) {
                     SenselContact contact = frame->contacts[c];
                     unsigned int state = contact.state;
 
                     // see sensel.h for available values
-                    packet << osc::BeginMessage( "/morph" )
+                    packet << osc::BeginMessage( "/contact" )
                         << (int) morph.index
                         << (int) contact.id
                         << (int) contact.state
@@ -162,6 +185,7 @@ int main(int argc, char* argv[])
                         << (float) contact.y_pos
                         << (float) contact.total_force
                         << (int) contact.area
+                        << (float) morph.distances_to_center_of_mass[c]
                         << (float) contact.orientation // % 360, // strange +- values occur, see http://guide.sensel.com/api/#ellipse
                         << (float) contact.major_axis
                         << (float) contact.minor_axis
@@ -171,7 +195,7 @@ int main(int argc, char* argv[])
                         packet.Clear();
                     }
 
-                    packet << osc::BeginMessage( "/morphDelta" )
+                    packet << osc::BeginMessage( "/contactDelta" )
                         << (int) morph.index
                         << (int) contact.id
                         << (float) contact.delta_x
@@ -184,7 +208,7 @@ int main(int argc, char* argv[])
                         packet.Clear();
                     }
 
-                    packet << osc::BeginMessage( "/morphBB" )
+                    packet << osc::BeginMessage( "/contactBB" )
                         << (int) morph.index
                         << (int) contact.id
                         << (float) contact.min_x
@@ -197,7 +221,7 @@ int main(int argc, char* argv[])
                         packet.Clear();
                     }
 
-                    packet << osc::BeginMessage( "/morphPeak" )
+                    packet << osc::BeginMessage( "/contactPeak" )
                         << (int) morph.index
                         << (int) contact.id
                         << (float) contact.peak_x
@@ -214,6 +238,21 @@ int main(int argc, char* argv[])
                     packet << osc::EndBundle;
                     transmitSocket.Send( packet.Data(), packet.Size() );
                     packet.Clear();
+                }
+            } else {
+                if (lastFrameValid) {
+                    packet << osc::BeginMessage( "/contactAvg" )
+                        << (int) morph.index
+                        << (int) 0
+                        << (float) 0.
+                        << (float) 0.
+                        << (float) 0.
+                        << (float) 0.
+                        << (float) 0.
+                        << osc::EndMessage;
+                        transmitSocket.Send( packet.Data(), packet.Size() );
+                        packet.Clear();
+                        lastFrameValid = false;
                 }
             } // end if
         } // rof

@@ -25,42 +25,108 @@ build/apps/senselosc
 
 ## OSC interface
 
-4 message types
+5 message types
 
 ```
-/morph index id state x y force area orientation  major_axis  minor_axis
-/morphDelta index id delta_x delta_y delta_force delta_area
-/morphBB index id min_x min_y max_x max_y
-/morphPeak index id peak_x peak_y peak_force
+/contactAvg index num_contacts x y force area distance
+/contact index id state x y force area distance orientation  major_axis  minor_axis
+/contactDelta index id delta_x delta_y delta_force delta_area
+/contactBB index id min_x min_y max_x max_y
+/contactPeak index id peak_x peak_y peak_force
 ```
 
-with 
+
+### contactAvg
+
+```
+/contactAvg index num_contacts x y force area distance
+```
+
+Average values for all currently registered contacts. If messages are sent in bundles, this message precedes the messages for the individual contacts.
+If no contacts are detected, a message with `num_contacts = 0` is sent once.
+
 ```txt
-index       [int]   device index (currently always 0)
-id          [int]   contact id (0..15)
+index           [int]   device index (currently always 0)
+num_contacts    [int]   number of contacts
+x               [float] x-coordinate in [mm]
+y               [float] y-coordinate in [mm]
+force           [float] sum of pressure applied [g] 
+area            [int]   covered area [sensels]
+distance        [float] distance to average position [mm]
+```
 
-state       [int]   one of invalid(0), start(1), move(2), end(3) 
-x           [float] x-coordinate in [mm]
-y           [float] y-coordinate in [mm]
-force       [float] sum of pressure applied [g] 
-area        [int]   covered area [sensels]
-orientation [float] orientation of bounding elipsis [deg] (0..360)
-major_axis  [float] major axis length of bounding elipsis [mm]
-minor_axis  [float] minor_axis length of bounding elipsis [mm]
+### contact
 
-delta_x     [float] x displacement [mm]
-delta_y     [float] y displacement [mm]
-delta_force [float] change of force [g]
-delta_area  [int]   change of covered area [sensels]
+Basic values for each registered contact.
 
-min_x       [float] upper-left x-coordinate of bounding-box [mm] 
-min_y       [float] upper-left y-coordinate of bounding-box [mm] 
-max_x       [float] lower-right x-coordinate of bounding-box [mm] 
-max_y       [float] lower-right y-coordinate of bounding-box [mm] 
+```
+/contact index id state x y force area distance orientation  major_axis  minor_axis
+```
 
-peak_x      [float] x-coordinate of pressure peak [mm]
-peak_y      [float] y-coordinate of pressure peak [mm]
-peak_force  [float] force at pressur peak [g]
+```txt
+index           [int]   device index (currently always 0)
+id              [int]   contact id (0..15)
+state           [int]   one of invalid(0), start(1), move(2), end(3) 
+x               [float] x-coordinate in [mm]
+y               [float] y-coordinate in [mm]
+force           [float] sum of pressure applied [g] 
+area            [int]   covered area [sensels]
+distance        [float] distance to average position [mm]
+orientation     [float] orientation of bounding elipsis [deg] (0..360)
+major_axis      [float] major axis length of bounding elipsis [mm]
+minor_axis      [float] minor axis length of bounding elipsis [mm]
+```
+
+### contactDelta
+
+Delta-values for each registered contact.
+
+```
+/contactDelta index id delta_x delta_y delta_force delta_area
+```
+
+```txt
+index           [int]   device index (currently always 0)
+id              [int]   contact id (0..15)
+num_contacts    [int]   number of contacts
+delta_x         [float] x displacement [mm]
+delta_y         [float] y displacement [mm]
+delta_force     [float] change of force [g]
+delta_area      [int]   change of covered area [sensels]
+```
+
+
+### contactBB
+
+A bounding box for each registered contact.
+
+```
+/contactBB index id min_x min_y max_x max_y
+```
+
+```txt
+index           [int]   device index (currently always 0)
+id              [int]   contact id (0..15)
+min_x           [float] upper-left x-coordinate of bounding-box [mm] 
+min_y           [float] upper-left y-coordinate of bounding-box [mm] 
+max_x           [float] lower-right x-coordinate of bounding-box [mm] 
+max_y           [float] lower-right y-coordinate of bounding-box [mm] 
+```
+
+### contactPeak
+
+Peak values for each registered contact.
+
+```
+/contactPeak index id peak_x peak_y peak_force
+```
+
+```txt
+index           [int]   device index (currently always 0)
+id              [int]   contact id (0..15)
+peak_x          [float] x-coordinate of pressure peak [mm]
+peak_y          [float] y-coordinate of pressure peak [mm]
+peak_force      [float] force at pressur peak [g]
 ```
 
 ## Compilation
