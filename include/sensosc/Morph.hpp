@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdexcept>
 #include <cmath>
+// #include <limits>
 
 #include "sensel.h"
 #include "sensel_device.h"
@@ -46,16 +47,21 @@ namespace sensosc
 		void calcState();
 
 		// additional information, calculated in calcState()
-		float x_center_of_mass = .0;
-		float y_center_of_mass = .0;
+		float x_com = .0;
+		float y_com = .0;
+		float x_wcom = .0;
+		float y_wcom = .0;
+		float total_force = .0;
 		float average_force = .0;
 		float average_area = .0;
 
 		float average_distance = .0;
+		float average_wdistance = .0;
 
 		// array of distances between contacts and CoM
 		// array has same order as frame->contacts and as many valid entries
-		float *distances_to_center_of_mass = NULL;
+		float *distances_to_com = NULL;
+		float *distances_to_wcom = NULL;
 
 
 		// don't use me if you want to do anything else than printing

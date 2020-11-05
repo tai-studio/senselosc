@@ -34,8 +34,10 @@ namespace sensosc
 		init();
 	}
 	Morph::~Morph(){
-	    delete []this->distances_to_center_of_mass;  
-	    this->distances_to_center_of_mass = NULL;
+	    delete []this->distances_to_com;  
+	    this->distances_to_com = NULL;
+	    delete []this->distances_to_wcom;  
+	    this->distances_to_wcom = NULL;
 	// 	handle = NULL;
 	};
 
@@ -117,7 +119,8 @@ namespace sensosc
 		// senselSetScanMode(handle, SCAN_MODE_ASYNC);
 
 
-		this->distances_to_center_of_mass = new float[MAX_CONTACTS];  
+		this->distances_to_com = new float[MAX_CONTACTS];  
+		this->distances_to_wcom = new float[MAX_CONTACTS];  
 	}; // end init()
 
 
@@ -155,45 +158,81 @@ namespace sensosc
 		if (senselGetFrame(handle, frame) != SENSEL_OK) {
 			throw std::runtime_error("frame read error");
 		}
-		this->calcState();
+		if(frame->n_contacts > 0) {
+			this->calcState();
+		}
 		return frame;
 	} 
 	void Morph::calcState(){
 		//init
-		this->x_center_of_mass = .0;
-		this->y_center_of_mass = .0;
+		// float max_force = .0;
+		// float min_force = std::numeric_limits<float>::max();
+		// float delta_force = .0;
+		this->x_com = .0;
+		this->y_com = .0;
+		this->x_wcom = .0;
+		this->y_wcom = .0;
+		this->total_force    = .0;
 		this->average_force    = .0;
 		this->average_area     = .0;
 		this->average_distance = .0;
-		this->distances_to_center_of_mass[frame->n_contacts] = {};
+		// this->distances_to_com[frame->n_contacts] = {};
 
 		// compute averages
 		for (int c = 0; c < frame->n_contacts; c++) {
 			SenselContact contact = frame->contacts[c];
 
-			this->x_center_of_mass += contact.x_pos;
-			this->y_center_of_mass += contact.y_pos;
-			this->average_force    += contact.total_force;
+			this->x_com += contact.x_pos;
+			this->y_com += contact.y_pos;
+			// if (contact.total_force > max_force) {
+			// 	max_force = contact.total_force;
+			// }
+			// if (contact.total_force < min_force) {
+			// 	min_force = contact.total_force;
+			// }
+			this->total_force    += contact.total_force;
 			this->average_area     += contact.area;
 		}
-		this->x_center_of_mass = this->x_center_of_mass / frame->n_contacts;
-		this->y_center_of_mass = this->y_center_of_mass / frame->n_contacts;
-		this->average_force    = this->average_force    / frame->n_contacts;
-		this->average_area     = this->average_area     / frame->n_contacts;
+		// delta_force = max_force - min_force;
+		this->x_com = this->x_com / frame->n_contacts;
+		this->y_com = this->y_com / frame->n_contacts;
+		this->average_force    = this->total_force  / frame->n_contacts;
+		this->average_area     = this->average_area / frame->n_contacts;
 
 
 		// compute distances to CoM
+		this->x_wcom = this->x_com;
+		this->y_wcom = this->y_com;
 		for (int c = 0; c < frame->n_contacts; c++) {
 			SenselContact contact = frame->contacts[c];
 			float avg = std::hypot(
-				contact.x_pos - this->x_center_of_mass, 
-				contact.y_pos - this->y_center_of_mass 
+				contact.x_pos - this->x_com, 
+				contact.y_pos - this->y_com 
 			);
+			float weight = contact.total_force / this->total_force;
+			this->x_wcom += (contact.x_pos - this->x_wcom) * weight;
+			this->y_wcom += (contact.y_pos - this->y_wcom) * weight;
 
-			this->distances_to_center_of_mass[c] = avg;
-			this->average_distance += avg;			
+			this->distances_to_com[c] = avg;
+			this->average_distance += avg;
 		}
 		this->average_distance = this->average_distance / frame->n_contacts;
+
+		// compute distances to weighted CoM
+		for (int c = 0; c < frame->n_contacts; c++) {
+			SenselContact contact = frame->contacts[c];
+			float avg = std::hypot(
+				contact.x_pos - this->x_wcom, 
+				contact.y_pos - this->y_wcom 
+			);
+			float weight = contact.total_force / this->total_force;
+
+			this->distances_to_wcom[c] = avg;
+			this->average_wdistance += avg;
+		}
+		this->average_wdistance = this->average_wdistance / frame->n_contacts;
+
+
 	}
 	void Morph::setLED(int idx, float brightness){
 		senselSetLEDBrightness(handle, idx % numLEDs, (int) (brightness * maxLEDBrightness));

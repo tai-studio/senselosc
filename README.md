@@ -28,8 +28,8 @@ build/apps/senselosc
 5 message types
 
 ```
-/contactAvg index num_contacts x y force area distance
-/contact index id state x y force area distance orientation  major_axis  minor_axis
+/contactAvg index num_contacts x y avg_force avg_dist area x_w y_w total_force avg_wdist
+/contact index id state x y force area dist wdist orientation  major_axis  minor_axis
 /contactDelta index id delta_x delta_y delta_force delta_area
 /contactBB index id min_x min_y max_x max_y
 /contactPeak index id peak_x peak_y peak_force
@@ -39,7 +39,7 @@ build/apps/senselosc
 ### contactAvg
 
 ```
-/contactAvg index num_contacts x y force area distance
+/contactAvg index num_contacts x y avg_force avg_dist area x_w y_w total_force avg_wdist
 ```
 
 Average values for all currently registered contacts. If messages are sent in bundles, this message precedes the messages for the individual contacts.
@@ -48,11 +48,15 @@ If no contacts are detected, a message with `num_contacts = 0` is sent once.
 ```txt
 index           [int]   device index (currently always 0)
 num_contacts    [int]   number of contacts
-x               [float] x-coordinate in [mm]
-y               [float] y-coordinate in [mm]
-force           [float] sum of pressure applied [g] 
+x               [float] average x-coordinate over all contacts in [mm]
+y               [float] average y-coordinate over all contacts in [mm]
+avg_force       [float] average pressure applied [g] 
+avg_dist        [float] distance to average position [mm]
 area            [int]   covered area [sensels]
-distance        [float] distance to average position [mm]
+w_x             [float] force-weigthed average x-coordinate over all contacts in [mm]
+w_y             [float] force-weigthed average y-coordinate over all contacts in [mm]
+total_force     [float] sum of pressure applied [g] 
+avg_wdist       [float] distance to force-weighted average position [mm]
 ```
 
 ### contact
@@ -60,7 +64,7 @@ distance        [float] distance to average position [mm]
 Basic values for each registered contact.
 
 ```
-/contact index id state x y force area distance orientation  major_axis  minor_axis
+/contact index id state x y force area dist wdist orientation  major_axis  minor_axis
 ```
 
 ```txt
@@ -71,7 +75,8 @@ x               [float] x-coordinate in [mm]
 y               [float] y-coordinate in [mm]
 force           [float] sum of pressure applied [g] 
 area            [int]   covered area [sensels]
-distance        [float] distance to average position [mm]
+dist            [float] distance to average position [mm]
+wdist           [float] distance to weighted average position [mm]
 orientation     [float] orientation of bounding elipsis [deg] (0..360)
 major_axis      [float] major axis length of bounding elipsis [mm]
 minor_axis      [float] minor axis length of bounding elipsis [mm]

@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
             std::cout << "Usage: senselosc [options]\n";
             std::cout << desc << "\n";
             std::cout << R"(OSC messages sent:
-    /contactAvg   <index> <num_contacts> <x> <y> <force> <area> <distance>
+    /contactAvg   <index> <num_contacts> <x> <y> <wx> <wy> <force> <area> <distance>
     /contact      <index> <id> <state> <x> <y> <force> <area> <distance> <orient> <major_axis> <minor_axis>
     /contactDelta <index> <id> <d_x> <d_y> <d_force> <d_area>
     /contactBB    <index> <id> <min_x> <min_y> <max_x> <max_y>
@@ -161,11 +161,15 @@ int main(int argc, char* argv[])
                 packet << osc::BeginMessage( "/contactAvg" )
                     << (int) morph.index
                     << (int) frame->n_contacts
-                    << (float) morph.x_center_of_mass
-                    << (float) morph.y_center_of_mass
+                    << (float) morph.x_com
+                    << (float) morph.y_com
                     << (float) morph.average_force
+                    << (float) morph.average_distance // to CoM
                     << (float) morph.average_area
-                    << (float) morph.average_distance
+                    << (float) morph.x_wcom
+                    << (float) morph.y_wcom
+                    << (float) morph.total_force
+                    << (float) morph.average_wdistance // to weighted CoM
                     << osc::EndMessage;
                 if (notBundled) {
                     transmitSocket.Send( packet.Data(), packet.Size() );
@@ -185,7 +189,8 @@ int main(int argc, char* argv[])
                         << (float) contact.y_pos
                         << (float) contact.total_force
                         << (int) contact.area
-                        << (float) morph.distances_to_center_of_mass[c]
+                        << (float) morph.distances_to_com[c]
+                        << (float) morph.distances_to_wcom[c]
                         << (float) contact.orientation // % 360, // strange +- values occur, see http://guide.sensel.com/api/#ellipse
                         << (float) contact.major_axis
                         << (float) contact.minor_axis
@@ -243,12 +248,16 @@ int main(int argc, char* argv[])
                 if (lastFrameValid) {
                     packet << osc::BeginMessage( "/contactAvg" )
                         << (int) morph.index
-                        << (int) 0
-                        << (float) 0.
-                        << (float) 0.
-                        << (float) 0.
-                        << (float) 0.
-                        << (float) 0.
+                        << (int)   0
+                        << (float) .0
+                        << (float) .0
+                        << (float) .0
+                        << (float) .0
+                        << (float) .0
+                        << (float) .0
+                        << (float) .0
+                        << (float) .0
+                        << (float) .0
                         << osc::EndMessage;
                         transmitSocket.Send( packet.Data(), packet.Size() );
                         packet.Clear();
