@@ -33,6 +33,7 @@ build/apps/senselosc
 /contactDelta index id delta_x delta_y delta_force delta_area
 /contactBB index id min_x min_y max_x max_y
 /contactPeak index id peak_x peak_y peak_force
+/sync index updated_0 ... updated_15
 ```
 
 
@@ -131,7 +132,20 @@ index           [int]   device index (currently always 0)
 id              [int]   contact id (0..15)
 peak_x          [float] x-coordinate of pressure peak [mm]
 peak_y          [float] y-coordinate of pressure peak [mm]
-peak_force      [float] force at pressur peak [g]
+peak_force      [float] force at pressure peak [g]
+```
+
+### sync
+
+Each processed frame of updated information is concluded by a sync message that can be used to update functionality using all sent values.
+
+```
+/sync index updated_0 ... updated_15
+```
+
+```txt
+index           [int]   device index (currently always 0)
+updated_X       [int]   1 if contact id was updated, 0 otherwise
 ```
 
 ## Compilation

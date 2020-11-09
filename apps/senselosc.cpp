@@ -84,7 +84,8 @@ int main(int argc, char* argv[])
     /contact      <index> <id> <state> <x> <y> <force> <area> <distance> <orient> <major_axis> <minor_axis>
     /contactDelta <index> <id> <d_x> <d_y> <d_force> <d_area>
     /contactBB    <index> <id> <min_x> <min_y> <max_x> <max_y>
-    /contactPeak  <index> <id> <peak_x> <peak_y> <peak_force>)" 
+    /contactPeak  <index> <id> <peak_x> <peak_y> <peak_force>
+    /sync         <index> <updated_0> ... <updated_15>)" 
             << "\n" 
             << "see README.md for details."
             << "\n\n" 
@@ -120,12 +121,6 @@ int main(int argc, char* argv[])
         std::cerr << "Exception of unknown type!\n";
     }
 
-
-
-
-
-
-
     // OSC
     UdpTransmitSocket transmitSocket( IpEndpointName( OSC_OUT_ADDRESS, osc_outPort ) );
     char buffer[OSC_OUTPUT_BUFFER_SIZE];
@@ -148,6 +143,8 @@ int main(int argc, char* argv[])
     bool lastFrameValid = false;
     while (!enter_pressed) {
         int numFrames = morph.getNumFrames();
+        int contact_updated[MAX_CONTACTS] = {};
+
         // fprintf(stdout, "%d\n", numFrames);
         // morph.printAllVals();
         for (int i = 0; i < numFrames; ++i) {
@@ -179,6 +176,9 @@ int main(int argc, char* argv[])
                 for (int c = 0; c < frame->n_contacts; c++) {
                     SenselContact contact = frame->contacts[c];
                     unsigned int state = contact.state;
+
+                    // set to 1 if updated, 0 otherwise
+                    contact_updated[contact.id] = 1;
 
                     // see sensel.h for available values
                     packet << osc::BeginMessage( "/contact" )
@@ -238,14 +238,31 @@ int main(int argc, char* argv[])
                         packet.Clear();
                     }
 
-                } // rof
-                if (!notBundled) {
+                } // rof contacts
+
+                packet << osc::BeginMessage( "/sync" )
+                    << (int) morph.index;
+                    for (int i = 0; i < MAX_CONTACTS; ++i) {
+                        packet << (int) contact_updated[i];
+                    }
+                    packet << osc::EndMessage;
+
+                if (notBundled) {
+                    transmitSocket.Send( packet.Data(), packet.Size() );
+                    packet.Clear();
+                } else { // send bundle
                     packet << osc::EndBundle;
                     transmitSocket.Send( packet.Data(), packet.Size() );
                     packet.Clear();
-                }
+                } 
             } else {
                 if (lastFrameValid) {
+                    lastFrameValid = false;
+
+                    if (!notBundled) {
+                        packet << osc::BeginBundleImmediate;
+                    }
+
                     packet << osc::BeginMessage( "/contactAvg" )
                         << (int) morph.index
                         << (int)   0
@@ -259,9 +276,25 @@ int main(int argc, char* argv[])
                         << (float) .0
                         << (float) .0
                         << osc::EndMessage;
+                    if (notBundled) {
                         transmitSocket.Send( packet.Data(), packet.Size() );
                         packet.Clear();
-                        lastFrameValid = false;
+                    }
+
+                    packet << osc::BeginMessage( "/sync" )
+                        << (int) morph.index;
+                    for (int i = 0; i < MAX_CONTACTS; ++i) {
+                        packet << (int) contact_updated[i];
+                    }
+                    packet << osc::EndMessage;
+                    if (notBundled) {
+                        transmitSocket.Send( packet.Data(), packet.Size() );
+                        packet.Clear();
+                    } else { // send bundle
+                        packet << osc::EndBundle;
+                        transmitSocket.Send( packet.Data(), packet.Size() );
+                        packet.Clear();
+                    } 
                 }
             } // end if
         } // rof
