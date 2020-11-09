@@ -80,11 +80,11 @@ int main(int argc, char* argv[])
             std::cout << "Usage: senselosc [options]\n";
             std::cout << desc << "\n";
             std::cout << R"(OSC messages sent:
-    /contactAvg   <index> <num_contacts> <x> <y> <wx> <wy> <force> <area> <distance>
+    /contactAvg   <index> <num_contacts> <x_com> <y_com> <average_force> <average_distance> <average_area> <x_wcom> <y_wcom> <total_force> <average_wdistance>
     /contact      <index> <id> <state> <x> <y> <force> <area> <distance> <orient> <major_axis> <minor_axis>
-    /contactDelta <index> <id> <d_x> <d_y> <d_force> <d_area>
-    /contactBB    <index> <id> <min_x> <min_y> <max_x> <max_y>
-    /contactPeak  <index> <id> <peak_x> <peak_y> <peak_force>
+    /contactDelta <index> <id> <state> <d_x> <d_y> <d_force> <d_area>
+    /contactBB    <index> <id> <state> <min_x> <min_y> <max_x> <max_y>
+    /contactPeak  <index> <id> <state> <peak_x> <peak_y> <peak_force>
     /sync         <index> <updated_0> ... <updated_15>)" 
             << "\n" 
             << "see README.md for details."
@@ -203,6 +203,7 @@ int main(int argc, char* argv[])
                     packet << osc::BeginMessage( "/contactDelta" )
                         << (int) morph.index
                         << (int) contact.id
+                        << (int) contact.state
                         << (float) contact.delta_x
                         << (float) contact.delta_y
                         << (float) contact.delta_force
@@ -216,6 +217,7 @@ int main(int argc, char* argv[])
                     packet << osc::BeginMessage( "/contactBB" )
                         << (int) morph.index
                         << (int) contact.id
+                        << (int) contact.state
                         << (float) contact.min_x
                         << (float) contact.min_y
                         << (float) contact.max_x
@@ -229,6 +231,7 @@ int main(int argc, char* argv[])
                     packet << osc::BeginMessage( "/contactPeak" )
                         << (int) morph.index
                         << (int) contact.id
+                        << (int) contact.state
                         << (float) contact.peak_x
                         << (float) contact.peak_y
                         << (float) contact.peak_force

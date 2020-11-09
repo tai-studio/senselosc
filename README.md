@@ -30,9 +30,9 @@ build/apps/senselosc
 ```
 /contactAvg index num_contacts x y avg_force avg_dist area x_w y_w total_force avg_wdist
 /contact index id state x y force area dist wdist orientation  major_axis  minor_axis
-/contactDelta index id delta_x delta_y delta_force delta_area
-/contactBB index id min_x min_y max_x max_y
-/contactPeak index id peak_x peak_y peak_force
+/contactDelta index id state delta_x delta_y delta_force delta_area
+/contactBB index id state min_x min_y max_x max_y
+/contactPeak index id state peak_x peak_y peak_force
 /sync index updated_0 ... updated_15
 ```
 
@@ -88,12 +88,13 @@ minor_axis      [float] minor axis length of bounding elipsis [mm]
 Delta-values for each registered contact.
 
 ```
-/contactDelta index id delta_x delta_y delta_force delta_area
+/contactDelta index id state delta_x delta_y delta_force delta_area
 ```
 
 ```txt
 index           [int]   device index (currently always 0)
 id              [int]   contact id (0..15)
+state           [int]   one of invalid(0), start(1), move(2), end(3) 
 num_contacts    [int]   number of contacts
 delta_x         [float] x displacement [mm]
 delta_y         [float] y displacement [mm]
@@ -107,12 +108,13 @@ delta_area      [int]   change of covered area [sensels]
 A bounding box for each registered contact.
 
 ```
-/contactBB index id min_x min_y max_x max_y
+/contactBB index id state min_x min_y max_x max_y
 ```
 
 ```txt
 index           [int]   device index (currently always 0)
 id              [int]   contact id (0..15)
+state           [int]   one of invalid(0), start(1), move(2), end(3) 
 min_x           [float] upper-left x-coordinate of bounding-box [mm] 
 min_y           [float] upper-left y-coordinate of bounding-box [mm] 
 max_x           [float] lower-right x-coordinate of bounding-box [mm] 
@@ -124,12 +126,13 @@ max_y           [float] lower-right y-coordinate of bounding-box [mm]
 Peak values for each registered contact.
 
 ```
-/contactPeak index id peak_x peak_y peak_force
+/contactPeak index id state peak_x peak_y peak_force
 ```
 
 ```txt
 index           [int]   device index (currently always 0)
 id              [int]   contact id (0..15)
+state           [int]   one of invalid(0), start(1), move(2), end(3) 
 peak_x          [float] x-coordinate of pressure peak [mm]
 peak_y          [float] y-coordinate of pressure peak [mm]
 peak_force      [float] force at pressure peak [g]
