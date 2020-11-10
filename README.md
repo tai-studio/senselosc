@@ -23,6 +23,10 @@ cli program in
 build/apps/senselosc
 ```
 
+## SuperCollider
+
+[Morph](https://github.com/tai-studio/Morph) is a reference implementation of the OSC interface for SuperCollider. It is also available through the SuperColider-internal Quarks package management system.
+
 ## OSC interface
 
 5 message types
