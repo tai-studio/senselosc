@@ -163,6 +163,19 @@ The requirements for compilation are
 + A C++17 compatible compiler
 + Git
 
+This repository contains `oscpack` as a submodule. To install with this dependency, clone the repository with 
+
+```sh
+git clone --recursive https://github.com/tai-studio/senselosc
+```
+
+Alternatively, you can update the submodule (after cloning) with
+
+```sh
+git submodule update --init --recursive
+```
+
+
 To configure
 
 ```bash
