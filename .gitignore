@@ -32,3 +32,8 @@
 *.app
 build
 build_x86
+build_*
+build-*
+
+cmake.*
+.vscode
